@@ -8,6 +8,12 @@
 
 /* Begin PBXBuildFile section */
 		2A6825C21D80DAA100A27211 /* Geofencing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A6825C11D80DAA100A27211 /* Geofencing.swift */; };
+		2A6825C41D811C8B00A27211 /* CategoryMapViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A6825C31D811C8B00A27211 /* CategoryMapViewController.swift */; };
+		2A6825C61D82869900A27211 /* CustomPointAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A6825C51D82869900A27211 /* CustomPointAnnotation.swift */; };
+		2A6825C91D828F5E00A27211 /* ReminderDetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A6825C81D828F5E00A27211 /* ReminderDetailViewController.swift */; };
+		2A6825CF1D828FEB00A27211 /* Reminder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A6825CE1D828FEB00A27211 /* Reminder.swift */; };
+		2A6825D31D82B2E700A27211 /* ReminderCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A6825D21D82B2E700A27211 /* ReminderCell.swift */; };
+		2A6825D51D82BB8800A27211 /* AddReminderViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A6825D41D82BB8800A27211 /* AddReminderViewController.swift */; };
 		2A9B95491D7FE491009B9995 /* AddCategoryViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A9B95481D7FE491009B9995 /* AddCategoryViewController.swift */; };
 		2A9B954B1D7FEA34009B9995 /* SearchLocationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A9B954A1D7FEA34009B9995 /* SearchLocationViewController.swift */; };
 		2A9B954D1D7FECA4009B9995 /* SearchLocationTable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A9B954C1D7FECA4009B9995 /* SearchLocationTable.swift */; };
@@ -23,6 +29,12 @@
 
 /* Begin PBXFileReference section */
 		2A6825C11D80DAA100A27211 /* Geofencing.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Geofencing.swift; sourceTree = "<group>"; };
+		2A6825C31D811C8B00A27211 /* CategoryMapViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CategoryMapViewController.swift; sourceTree = "<group>"; };
+		2A6825C51D82869900A27211 /* CustomPointAnnotation.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CustomPointAnnotation.swift; sourceTree = "<group>"; };
+		2A6825C81D828F5E00A27211 /* ReminderDetailViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ReminderDetailViewController.swift; sourceTree = "<group>"; };
+		2A6825CE1D828FEB00A27211 /* Reminder.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Reminder.swift; sourceTree = "<group>"; };
+		2A6825D21D82B2E700A27211 /* ReminderCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ReminderCell.swift; sourceTree = "<group>"; };
+		2A6825D41D82BB8800A27211 /* AddReminderViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AddReminderViewController.swift; sourceTree = "<group>"; };
 		2A9B95481D7FE491009B9995 /* AddCategoryViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AddCategoryViewController.swift; sourceTree = "<group>"; };
 		2A9B954A1D7FEA34009B9995 /* SearchLocationViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SearchLocationViewController.swift; sourceTree = "<group>"; };
 		2A9B954C1D7FECA4009B9995 /* SearchLocationTable.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SearchLocationTable.swift; sourceTree = "<group>"; };
@@ -49,6 +61,40 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		2A6825C71D8286AA00A27211 /* Geofencing */ = {
+			isa = PBXGroup;
+			children = (
+				2A6825C11D80DAA100A27211 /* Geofencing.swift */,
+				2A6825C51D82869900A27211 /* CustomPointAnnotation.swift */,
+			);
+			name = Geofencing;
+			sourceTree = "<group>";
+		};
+		2A6825CA1D828F6900A27211 /* Category */ = {
+			isa = PBXGroup;
+			children = (
+				2A9FBC431D7EC7B900A52B67 /* CategoryListViewController.swift */,
+				2A6825C31D811C8B00A27211 /* CategoryMapViewController.swift */,
+				2A9FBC451D7EC89000A52B67 /* CategoryDetailViewController.swift */,
+				2A9B95481D7FE491009B9995 /* AddCategoryViewController.swift */,
+				2A9B954A1D7FEA34009B9995 /* SearchLocationViewController.swift */,
+				2A9B954C1D7FECA4009B9995 /* SearchLocationTable.swift */,
+				2A9FBC471D7EC99700A52B67 /* Category.swift */,
+			);
+			name = Category;
+			sourceTree = "<group>";
+		};
+		2A6825CB1D828F7200A27211 /* Reminder */ = {
+			isa = PBXGroup;
+			children = (
+				2A6825C81D828F5E00A27211 /* ReminderDetailViewController.swift */,
+				2A6825D21D82B2E700A27211 /* ReminderCell.swift */,
+				2A6825D41D82BB8800A27211 /* AddReminderViewController.swift */,
+				2A6825CE1D828FEB00A27211 /* Reminder.swift */,
+			);
+			name = Reminder;
+			sourceTree = "<group>";
+		};
 		2A9FBC221D7EC5CE00A52B67 = {
 			isa = PBXGroup;
 			children = (
@@ -69,18 +115,14 @@
 			isa = PBXGroup;
 			children = (
 				2A9FBC2E1D7EC5CE00A52B67 /* AppDelegate.swift */,
-				2A9FBC491D7EF3B400A52B67 /* Main.storyboard */,
-				2A9FBC431D7EC7B900A52B67 /* CategoryListViewController.swift */,
-				2A9FBC451D7EC89000A52B67 /* CategoryDetailViewController.swift */,
-				2A9B95481D7FE491009B9995 /* AddCategoryViewController.swift */,
-				2A9B954A1D7FEA34009B9995 /* SearchLocationViewController.swift */,
-				2A9B954C1D7FECA4009B9995 /* SearchLocationTable.swift */,
-				2A6825C11D80DAA100A27211 /* Geofencing.swift */,
-				2A9FBC471D7EC99700A52B67 /* Category.swift */,
 				2A9FBC381D7EC5CE00A52B67 /* Assets.xcassets */,
+				2A9FBC491D7EF3B400A52B67 /* Main.storyboard */,
 				2A9FBC3A1D7EC5CE00A52B67 /* LaunchScreen.storyboard */,
 				2A9FBC3D1D7EC5CE00A52B67 /* Info.plist */,
 				2A9FBC351D7EC5CE00A52B67 /* LocationReminder.xcdatamodeld */,
+				2A6825CB1D828F7200A27211 /* Reminder */,
+				2A6825CA1D828F6900A27211 /* Category */,
+				2A6825C71D8286AA00A27211 /* Geofencing */,
 			);
 			path = LocationReminder;
 			sourceTree = "<group>";
@@ -160,10 +202,16 @@
 				2A9B954B1D7FEA34009B9995 /* SearchLocationViewController.swift in Sources */,
 				2A9FBC441D7EC7B900A52B67 /* CategoryListViewController.swift in Sources */,
 				2A9FBC481D7EC99700A52B67 /* Category.swift in Sources */,
+				2A6825D31D82B2E700A27211 /* ReminderCell.swift in Sources */,
 				2A6825C21D80DAA100A27211 /* Geofencing.swift in Sources */,
+				2A6825C61D82869900A27211 /* CustomPointAnnotation.swift in Sources */,
 				2A9B954D1D7FECA4009B9995 /* SearchLocationTable.swift in Sources */,
+				2A6825C41D811C8B00A27211 /* CategoryMapViewController.swift in Sources */,
 				2A9B95491D7FE491009B9995 /* AddCategoryViewController.swift in Sources */,
 				2A9FBC461D7EC89000A52B67 /* CategoryDetailViewController.swift in Sources */,
+				2A6825D51D82BB8800A27211 /* AddReminderViewController.swift in Sources */,
+				2A6825CF1D828FEB00A27211 /* Reminder.swift in Sources */,
+				2A6825C91D828F5E00A27211 /* ReminderDetailViewController.swift in Sources */,
 				2A9FBC2F1D7EC5CE00A52B67 /* AppDelegate.swift in Sources */,
 				2A9FBC371D7EC5CE00A52B67 /* LocationReminder.xcdatamodeld in Sources */,
 			);

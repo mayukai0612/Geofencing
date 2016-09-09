@@ -16,7 +16,7 @@ protocol HandleMapSearch: class {
 protocol AddNotifyDelegate
 {
     func addLocation(coordinate:CLLocationCoordinate2D,locationName:String)
-    func addNotifyPara(radius:Int,timing:String)
+    func addNotifyPara(radius:CLLocationDistance,timing:String)
 }
 
 class SearchLocationViewController: UIViewController,UISearchBarDelegate,MKMapViewDelegate,CLLocationManagerDelegate,HandleMapSearch{
@@ -37,8 +37,10 @@ class SearchLocationViewController: UIViewController,UISearchBarDelegate,MKMapVi
     var addNotifyDelegate: AddNotifyDelegate?
     
     //geofencing variables
-    var notifyTiming:String = "entry"
-    var notifyRadius:Int = 50
+    var notifyTiming:String = "On Entry"
+    var notifyRadius:CLLocationDistance = 50
+    var geofencing: Geofencing?
+    
     
     let locationManager = CLLocationManager()
     
@@ -49,6 +51,8 @@ class SearchLocationViewController: UIViewController,UISearchBarDelegate,MKMapVi
         let saveBtn : UIBarButtonItem = UIBarButtonItem(title: "Save", style: UIBarButtonItemStyle.Plain, target: self, action: #selector(SearchLocationViewController.OnSaveClicked))
         
         self.navigationItem.setRightBarButtonItem(saveBtn, animated: false)
+        
+        mapView.delegate = self
         
         //set locationManager
         locationManager.delegate = self
@@ -61,7 +65,7 @@ class SearchLocationViewController: UIViewController,UISearchBarDelegate,MKMapVi
         resultSearchController = UISearchController(searchResultsController: locationSearchTable)
         resultSearchController.searchResultsUpdater = locationSearchTable
         
-        
+        //search bar
         let searchBar = resultSearchController!.searchBar
         searchBar.sizeToFit()
         searchBar.placeholder = "Search for places"
@@ -71,6 +75,13 @@ class SearchLocationViewController: UIViewController,UISearchBarDelegate,MKMapVi
         definesPresentationContext = true
         locationSearchTable.mapView = mapView
         locationSearchTable.handleMapSearchDelegate = self
+        
+        
+        //add action on segment controller
+        entryLeavingSegmentController.addTarget(self, action: #selector(SearchLocationViewController.notifyTimingChanged(_:)), forControlEvents: UIControlEvents.AllEvents)
+
+        radiusSegmentController.addTarget(self,action:#selector(SearchLocationViewController.notifyRadiusChanged(_:)), forControlEvents: UIControlEvents.AllEvents)
+
         
         //set default notify timing
         entryLeavingSegmentController.selectedSegmentIndex = 0
@@ -83,34 +94,13 @@ class SearchLocationViewController: UIViewController,UISearchBarDelegate,MKMapVi
     
     @IBAction func notifyTimingClicked(sender: AnyObject) {
         
-        if(entryLeavingSegmentController.selectedSegmentIndex == 0)
-        {
-            self.notifyTiming  =  "entry"
-        }
-        
-        if(entryLeavingSegmentController.selectedSegmentIndex == 1)
-        {
-            self.notifyTiming  =  "leaving"
-        }
+       getTiming()
     }
     
     @IBAction func notifyRadiusClicked(sender: AnyObject) {
         
         
-        if(radiusSegmentController.selectedSegmentIndex == 0)
-        {
-            self.notifyRadius  =  50
-        }
-        
-        if(radiusSegmentController.selectedSegmentIndex == 1)
-        {
-             self.notifyRadius  =  250
-        }
-        
-        if(radiusSegmentController.selectedSegmentIndex == 2)
-        {
-            self.notifyRadius  =  1000
-        }
+       getRadius()
 
     }
     
@@ -133,6 +123,23 @@ class SearchLocationViewController: UIViewController,UISearchBarDelegate,MKMapVi
         }
     }
     
+    //timing changed
+    func notifyTimingChanged(segmentController:UISegmentedControl)
+    {
+        getTiming()
+        addAnnotation(self.geofencing!)
+        self.geofencing?.notifyTiming = self.notifyTiming
+    }
+    
+    //radius changed
+    func notifyRadiusChanged(segmentController:UISegmentedControl)
+    {
+        getRadius()
+        removeRadiusOverlay()
+        self.geofencing?.radius = self.notifyRadius
+        addRadiusCircleForGeofencing(self.geofencing!)
+    
+    }
 //    func regionWithGeotification(coordinate:CLLocationCoordinate2D,radius:Int,notifyTiming:String) -> CLCircularRegion {
 //        // 1
 //        let region = CLCircularRegion(center: self.selectedPin!.coordinate, radius: self.notifyRadius,identifier:)
@@ -142,6 +149,43 @@ class SearchLocationViewController: UIViewController,UISearchBarDelegate,MKMapVi
 //        region.notifyOnExit = !region.notifyOnEntry
 //        return region
 //    }
+    
+    func getRadius()
+    {
+        if(radiusSegmentController.selectedSegmentIndex == 0)
+        {
+            self.notifyRadius  =  50
+        }
+        
+        if(radiusSegmentController.selectedSegmentIndex == 1)
+        {
+            self.notifyRadius  =  250
+        }
+        
+        if(radiusSegmentController.selectedSegmentIndex == 2)
+        {
+            self.notifyRadius  =  1000
+        }
+        
+
+        
+    }
+    
+    func getTiming()
+    {
+        
+        if(entryLeavingSegmentController.selectedSegmentIndex == 0)
+        {
+            self.notifyTiming  =  "On Entry"
+        }
+        
+        if(entryLeavingSegmentController.selectedSegmentIndex == 1)
+        {
+            self.notifyTiming  =  "On Leaving"
+        }
+
+    }
+    
     
     func getDirections(){
         guard let selectedPin = selectedPin else { return }
@@ -169,6 +213,16 @@ class SearchLocationViewController: UIViewController,UISearchBarDelegate,MKMapVi
         return pinView
     }
     
+    func mapView(mapView: MKMapView, rendererForOverlay overlay: MKOverlay) -> MKOverlayRenderer!{
+        if overlay is MKCircle {
+            let circleRenderer = MKCircleRenderer(overlay: overlay)
+            circleRenderer.lineWidth = 1.0
+            circleRenderer.strokeColor = UIColor.purpleColor()
+            circleRenderer.fillColor = UIColor.purpleColor().colorWithAlphaComponent(0.4)
+            return circleRenderer
+        }
+        return nil
+    }
     
     
     func locationManager(manager: CLLocationManager, didChangeAuthorizationStatus status: CLAuthorizationStatus) {
@@ -196,22 +250,52 @@ class SearchLocationViewController: UIViewController,UISearchBarDelegate,MKMapVi
             // cache the pin
             selectedPin = placemark
             
-            // clear existing pins
-            mapView.removeAnnotations(mapView.annotations)
-            let annotation = MKPointAnnotation()
-            annotation.coordinate = placemark.coordinate
-            annotation.title = placemark.name
+            //geofencing
+            self.geofencing = Geofencing(coordinate: placemark.coordinate, radius: self.notifyRadius, identifier:NSUUID().UUIDString , notifyTiming: self.notifyTiming)
+
+            addAnnotation(self.geofencing!)
             
-            if let city = placemark.locality,
-                let state = placemark.administrativeArea {
-                annotation.subtitle = "\(city) \(state)"
-            }
+            //add circle overlay
+            addRadiusCircleForGeofencing(self.geofencing!)
             
-            mapView.addAnnotation(annotation)
             let span = MKCoordinateSpanMake(0.05, 0.05)
             let region = MKCoordinateRegionMake(placemark.coordinate, span)
             mapView.setRegion(region, animated: true)
+            
+        }
+    
+    func addAnnotation(geofencing:Geofencing)
+    {
+    
+        // clear existing pins
+        mapView.removeAnnotations(mapView.annotations)
+        
+        //annotations
+        let annotation = MKPointAnnotation()
+        annotation.coordinate = geofencing.coordinate
+        annotation.title = self.selectedPin?.name
+        
+        //
+        let radius = self.notifyRadius
+        let timing = self.notifyTiming
+        annotation.subtitle = "Radius:\(radius) \(timing)"
+        
+        //add annotation
+        mapView.addAnnotation(annotation)
+
+    }
+    
+    
+    func removeRadiusOverlay() {
+        if let overlays = mapView?.overlays {
+            mapView?.removeOverlay(overlays[0])
         }
     }
+    
+    func addRadiusCircleForGeofencing(geofencing:Geofencing ) {
+        self.mapView.addOverlay(MKCircle(centerCoordinate: geofencing.coordinate, radius: geofencing.radius))
+    }
+
+}
 
 

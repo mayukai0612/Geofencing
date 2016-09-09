@@ -34,7 +34,7 @@ class AddCategoryViewController: UIViewController,AddNotifyDelegate {
     var location:String?
     var lat:Double?
     var lgt: Double?
-    var notifyRadius:Int?
+    var notifyRadius:CLLocationDistance?
     var notifyTiming:String?
     
     var addCategoryDelegate: AddCategoryDelegate?
@@ -143,6 +143,10 @@ class AddCategoryViewController: UIViewController,AddNotifyDelegate {
         let categoryLocation = self.locationTextField.text!.trim()
         let categoryTitle = self.titleTextField.text!.trim()
         let notificationStatus = notificationSwitch.on
+        if(self.categoryColor == nil)
+        {
+            self.categoryColor = "white"
+        }
         self.category = Category(categoryTitle:categoryTitle,categoryColor:categoryColor!,categoryLocation:categoryLocation,notificationStatus:notificationStatus,lat:self.lat!,lgt:self.lgt!,notifyRadius: self.notifyRadius,notifyTiming: self.notifyTiming)
     }
     
@@ -156,6 +160,7 @@ class AddCategoryViewController: UIViewController,AddNotifyDelegate {
     
     }
     
+    //addNotify delegate: addLocation
     func addLocation(coordinate: CLLocationCoordinate2D,locationName:String) {
         
         self.location = locationName
@@ -169,7 +174,8 @@ class AddCategoryViewController: UIViewController,AddNotifyDelegate {
         
     }
     
-    func addNotifyPara(radius:Int,timing:String)
+    //addNotify delegate: addNotifyPara
+    func addNotifyPara(radius:CLLocationDistance,timing:String)
     {
         self.notifyTiming = timing
         self.notifyRadius = radius

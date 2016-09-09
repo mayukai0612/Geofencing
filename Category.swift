@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import MapKit
 
 class Category: NSObject {
     
@@ -17,15 +18,15 @@ class Category: NSObject {
     var notificationStatus: Bool?
     var lat: Double?
     var lgt: Double?
-    var notifyRadius:Int?
+    var notifyRadius:CLLocationDistance?
     var notifyTiming:String?
-    
+    var reminderList = [Reminder]()
     
     override init() {
         
     }
     
-    init(categoryId: Int,categoryTitle:String,categoryColor:String,categoryLocation:String,notificationStatus:Bool,notifyDistance:Int,
+    init(categoryId: Int,categoryTitle:String,categoryColor:String,categoryLocation:String,notificationStatus:Bool,notifyDistance:CLLocationDistance,
          lat:Double,lgt:Double) {
         self.categoryId = categoryId
         self.categoryTitle = categoryTitle
@@ -37,7 +38,7 @@ class Category: NSObject {
     }
     
     init(categoryTitle:String,categoryColor:String,categoryLocation:String,notificationStatus:Bool,
-         lat:Double,lgt:Double,notifyRadius:Int?,notifyTiming:String?) {
+         lat:Double,lgt:Double,notifyRadius:CLLocationDistance?,notifyTiming:String?) {
         self.categoryTitle = categoryTitle
         self.categoryColor = categoryColor
         self.categoryLocation = categoryLocation

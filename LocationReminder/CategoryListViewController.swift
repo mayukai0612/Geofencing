@@ -7,10 +7,11 @@
 //
 
 import UIKit
-
+import MapKit
 //protocol CategorySelectionDelegate: class {
 //    func categorySelected(newCategory: Category)
 //}
+
 
 class CategoryListViewController: UITableViewController ,UISplitViewControllerDelegate,AddCategoryDelegate{
     
@@ -23,6 +24,44 @@ class CategoryListViewController: UITableViewController ,UISplitViewControllerDe
     required init(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)!
         
+        let lat = -37.870106
+        let lgt = 145.041851
+        let notifyRadius1: CLLocationDistance = 50
+        let notifyRadius2: CLLocationDistance = 250
+        let notifyRadius3: CLLocationDistance = 1000
+        
+        let reminder1 = Reminder(reminderTitle:"R1",note:"nnn",completed: false)
+        let reminder2 = Reminder(reminderTitle:"R2",note:"note",completed: true)
+        let reminder3 = Reminder(reminderTitle:"R3",note:"nn3",completed: false)
+
+        var reminderList1 = [Reminder]()
+        var reminderList2 = [Reminder]()
+        var reminderList3 = [Reminder]()
+
+        reminderList1.append(reminder1)
+        reminderList1.append(reminder2)
+        
+        
+        reminderList2.append(reminder2)
+        reminderList2.append(reminder3)
+
+        reminderList3.append(reminder1)
+        reminderList3.append(reminder3)
+
+        let category1 = Category(categoryTitle:"test",categoryColor:"red",categoryLocation:"loc",notificationStatus:true,lat:lat,lgt: lgt,notifyRadius:notifyRadius1 ,notifyTiming: "On Entry")
+        
+        let category2 = Category(categoryTitle:"test1",categoryColor:"yellow",categoryLocation:"loc",notificationStatus:true,lat:lat,lgt: lgt,notifyRadius:notifyRadius2 ,notifyTiming: "On Entry")
+
+        let category3 = Category(categoryTitle:"test2",categoryColor:"green",categoryLocation:"loc",notificationStatus:false,lat:lat,lgt: lgt,notifyRadius:notifyRadius3 ,notifyTiming: "On Leaving")
+
+        category1.reminderList = reminderList1
+        category2.reminderList = reminderList2
+        category3.reminderList = reminderList3
+
+        self.categoryList.append(category1)
+        self.categoryList.append(category2)
+        self.categoryList.append(category3)
+
 //    self.categoryList.append(Category(categoryId: 1,categoryTitle:"test",categoryColor:"red",categoryLocation:"test",notificationStatus:true,notifyDistance:100))
 //        
 //          self.categoryList.append(Category(categoryId: 2,categoryTitle:"test2",categoryColor:"red",categoryLocation:"test",notificationStatus:true,notifyDistance:100))
@@ -47,7 +86,7 @@ class CategoryListViewController: UITableViewController ,UISplitViewControllerDe
         
         self.tableView.rowHeight = 100
         
-        
+        self.tableView.delegate = self
     }
     
     override func didReceiveMemoryWarning() {
@@ -70,6 +109,17 @@ class CategoryListViewController: UITableViewController ,UISplitViewControllerDe
         
     }
 
+    
+    @IBAction func viewMapBtn(sender: AnyObject) {
+        
+        let navigationController = self.splitViewController?.viewControllers.last as! UINavigationController
+        
+        let vc = self.storyboard!.instantiateViewControllerWithIdentifier("categoryMap") as! CategoryMapViewController
+        vc.categoryList = self.categoryList
+        navigationController.pushViewController(vc, animated: true)
+        
+        
+    }
     
     func addCategory(category: Category) {
         self.categoryList.append(category)
@@ -111,6 +161,28 @@ class CategoryListViewController: UITableViewController ,UISplitViewControllerDe
         return cell
     }
     
+    override func tableView(tableView: UITableView, canEditRowAtIndexPath indexPath: NSIndexPath) -> Bool
+    {
+        return true
+    }
+
+    override func tableView(tableView: UITableView, editActionsForRowAtIndexPath indexPath: NSIndexPath) -> [UITableViewRowAction]?
+    {
+    
+        
+        let edit = UITableViewRowAction(style: .Normal, title: "Edit") { action, index in
+            print("favorite button tapped")
+        }
+        edit.backgroundColor = UIColor.orangeColor()
+        
+        let delete = UITableViewRowAction(style: .Normal, title: "Delete") { action, index in
+            print("share button tapped")
+        }
+        delete.backgroundColor = UIColor.redColor()
+        
+        return [delete, edit]
+    }
+    
     override func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
 //        let selectedCategory = self.categoryList[indexPath.row]
         self.performSegueWithIdentifier("showDetail", sender: self)
@@ -130,14 +202,17 @@ class CategoryListViewController: UITableViewController ,UISplitViewControllerDe
             
             let nav = segue.destinationViewController as! UINavigationController
             
-            let vc = nav.viewControllers[0] as! CategoryDetailViewController
+            let vc = nav.viewControllers[0] as! ReminderDetailViewController
             
-            vc.category = self.categoryList[index.row]
+            vc.reminderList = self.categoryList[index.row].reminderList
             
             
             self.tableView.deselectRowAtIndexPath(index, animated: true)
             
         }
+        
+      
+
         
     }
     

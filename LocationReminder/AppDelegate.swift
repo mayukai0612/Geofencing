@@ -24,11 +24,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
        
         let detailNavigationController = splitViewController.viewControllers.last as! UINavigationController
 
-        let detailViewController = detailNavigationController.topViewController as! CategoryDetailViewController
+        let detailViewController = detailNavigationController.topViewController as! ReminderDetailViewController
         
-        let firstCategory = masterViewController.categoryList.first
-        detailViewController.category = firstCategory
         
+        if let firstCategory = masterViewController.categoryList.first{
+        detailViewController.reminderList = (firstCategory.reminderList)
+        }
         
         
      //   masterViewController.delegate = detailViewController
