@@ -1,16 +1,21 @@
-//
-//  ReminderDetailViewController.swift
-//  LocationReminder
-//
-//  Created by Yukai Ma on 9/09/2016.
-//  Copyright © 2016 Yukai Ma. All rights reserved.
-//
+
 
 import UIKit
+import CoreData
 
-class ReminderDetailViewController: UITableViewController ,AddReminderListDelegate{
+protocol AddReminderToMOCDelegate{
+    func addReminderToMOC(reminder:Reminder)
+}
 
+class ReminderDetailViewController: UITableViewController,AddReminderListDelegate,EditReminderDelegate{
+    
+    var managedObjectContext:NSManagedObjectContext?
+    var addReminderToMOCDelegate:AddReminderToMOCDelegate?
+    
     var reminderList = [Reminder]()
+    var selectedRow: Int?
+    
+
     
     
     override func viewDidLoad() {
@@ -34,10 +39,19 @@ class ReminderDetailViewController: UITableViewController ,AddReminderListDelega
     
     func OnAddClicked()
     {
+        if(self.managedObjectContext == nil)
+        {
+            errorAlert("No Category",msg: "Please Create a category first.")
+            return
+        }
+        else{
         
         let popOverVC = UIStoryboard(name: "Main", bundle: nil).instantiateViewControllerWithIdentifier("ReminderPopUp") as! AddReminderViewController
         popOverVC.addReminderDelegate = self
+        popOverVC.editOrAddFlag = "add"
+        popOverVC.managedObjectContext = self.managedObjectContext
         self.addChildView(popOverVC)
+        }
 
    // self.navigationController?.pushViewController(<#T##viewController: UIViewController##UIViewController#>, animated: <#T##Bool#>)
     
@@ -56,26 +70,12 @@ class ReminderDetailViewController: UITableViewController ,AddReminderListDelega
     
     func addReminder(reminder:Reminder)
     {
+        addReminderToMOCDelegate?.addReminderToMOC(reminder)
         self.reminderList.append(reminder)
         self.tableView.reloadData()
     }
     
-    
-//    @IBAction func addCategoryBtn(sender: AnyObject) {
-//        
-//        //                if let detailViewController  ==  CategoryDetailViewController() {
-//        //                    splitViewController?.showDetailViewController(detailViewController, sender: nil)
-//        
-//        let navigationController = self.splitViewController?.viewControllers.last as! UINavigationController
-//        
-//        let vc = self.storyboard!.instantiateViewControllerWithIdentifier("addCategory") as! AddCategoryViewController
-//        vc.addCategoryDelegate = self
-//        navigationController.pushViewController(vc, animated: true)
-//        
-//        
-//        
-//    }
-//    
+
 
 
     //TableView
@@ -96,12 +96,12 @@ class ReminderDetailViewController: UITableViewController ,AddReminderListDelega
         
         cell.reminderTitleLabel.text = reminder.reminderTitle
         cell.reminderDescLabel.text = reminder.note
-        if(reminder.time == nil){
+        if(reminder.reminderTime == nil){
             cell.reminderTimeLabel.text = ""
         }else{
-            var dateFormatter: NSDateFormatter = NSDateFormatter()
+            let dateFormatter: NSDateFormatter = NSDateFormatter()
             dateFormatter.dateFormat = "dd-MM-yyyy h:mm a"
-        cell.reminderTimeLabel.text = dateFormatter.stringFromDate(reminder.time!)
+        cell.reminderTimeLabel.text = dateFormatter.stringFromDate(reminder.reminderTime!)
             
         }
         
@@ -113,8 +113,10 @@ class ReminderDetailViewController: UITableViewController ,AddReminderListDelega
         else{
             cell.completedSwitch.setOn(false, animated: false)
         }
-
         
+        //add event to switch
+        cell.completedSwitch.tag = indexPath.row
+        cell.completedSwitch.addTarget(self,action: #selector(ReminderDetailViewController.switchIsChanged(_:)), forControlEvents: UIControlEvents.ValueChanged)
         
         return cell
     }
@@ -124,43 +126,89 @@ class ReminderDetailViewController: UITableViewController ,AddReminderListDelega
         return true
     }
     
-    override func tableView(tableView: UITableView, editActionsForRowAtIndexPath indexPath: NSIndexPath) -> [UITableViewRowAction]?
-    {
-        
-        let reminder = self.reminderList[indexPath.row]
-        var compeleted: UITableViewRowAction?
-        if(reminder.completed == false)
-        {
-            compeleted = UITableViewRowAction(style: .Normal, title: "Uncompleted") { action, index in
-                print("uncompleted button tapped")
+   
+    
+    override func tableView(tableView: UITableView, commitEditingStyle editingStyle: UITableViewCellEditingStyle, forRowAtIndexPath indexPath: NSIndexPath) {
+        if editingStyle == UITableViewCellEditingStyle.Delete {
+            
+         
+            
+            //delete in the managedObjectContext
+            
+            //delete select reminder from managedObjectContext
+            self.managedObjectContext!.deleteObject(self.reminderList[indexPath.row] as NSManagedObject)
+            //Save the ManagedObjectContext
+            do
+            {
+                try self.managedObjectContext!.save()
             }
-        }
-        else{
-            compeleted = UITableViewRowAction(style: .Normal, title: "Completed") { action, index in
-                print("completed button tapped")
+            catch let error
+            {
+                print("Could not save Deletion \(error)")
             }
+            
+            self.reminderList.removeAtIndex(indexPath.row)
+            tableView.deleteRowsAtIndexPaths([indexPath], withRowAnimation: UITableViewRowAnimation.Automatic)
+            
+            tableView.reloadData()
+            
+            
         }
-        
-        compeleted!.backgroundColor = UIColor.orangeColor()
-        
-        let delete = UITableViewRowAction(style: .Normal, title: "Delete") { action, index in
-            print("share button tapped")
-        }
-        delete.backgroundColor = UIColor.redColor()
-        
-        return [delete, compeleted!]
     }
     
     override func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
-        //        let selectedCategory = self.categoryList[indexPath.row]
-        //self.performSegueWithIdentifier("showDetail", sender: self)
+                let reminder = self.reminderList[indexPath.row]
         
-        //        if let detailViewController = self.delegate as? CategoryDetailViewController {
-        //            splitViewController?.showDetailViewController(detailViewController, sender: nil)
+        self.selectedRow = indexPath.row
         
+        let popOverVC = UIStoryboard(name: "Main", bundle: nil).instantiateViewControllerWithIdentifier("ReminderPopUp") as! AddReminderViewController
+        popOverVC.editReminderDelegate = self
+        popOverVC.reminder = reminder
+        popOverVC.managedObjectContext = self.managedObjectContext
+        popOverVC.editOrAddFlag = "edit"
+        
+
+        self.addChildView(popOverVC)
+        
+
+
         
     }
     
-
+    func errorAlert(title:String,msg:String){
+        let alert = UIAlertController(title: title, message: msg, preferredStyle: .Alert)
+        let action = UIAlertAction(title: "Got it", style: .Default, handler: nil)
+        alert.addAction(action)
+        self.presentViewController(alert, animated: true, completion: nil)
+    }
+    
+    
+    func editReminder(reminder:Reminder)
+    {
+        //delete select reminder from managedObjectContext
+        managedObjectContext!.deleteObject(self.reminderList[selectedRow!] as NSManagedObject)
+       
+        
+        //table view change
+        self.reminderList.removeAtIndex(selectedRow!)
+        self.reminderList.append(reminder)
+        self.tableView.reloadData()
+        
+       //add reminder to managedObjectcontext
+        addReminderToMOCDelegate?.addReminderToMOC(reminder)
+        
+       
+    }
+    
+    
+    //action when switch is changed
+    func switchIsChanged(sender:UISwitch)
+    {
+        let index = sender.tag
+        self.reminderList[index].completed = sender.on
+        //change the reminder in ManagedObjectContext
+        
+        
+    }
     
 }

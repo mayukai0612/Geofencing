@@ -1,12 +1,16 @@
 
 
 import UIKit
-
+import CoreData
 
 protocol AddReminderListDelegate
 {
     func addReminder(reminder:Reminder)
 
+}
+
+protocol EditReminderDelegate {
+    func editReminder(reminder:Reminder)
 }
 
 
@@ -18,17 +22,21 @@ class AddReminderViewController: UIViewController,UIActionSheetDelegate{
     
     
     @IBAction func saveBtn(sender: AnyObject) {
-        getReminderFromInput()
-        
-        if let reminder = self.reminder
+       
+    if (checkInput()){
+        if(self.editOrAddFlag == "add")
         {
-            addReminderDelegate?.addReminder(reminder)
+            addReminderDelegate?.addReminder(getReminderFromInput())
+                
+        }
+        else if (self.editOrAddFlag == "edit")
+        {
+                editReminderDelegate?.editReminder(getReminderFromInput())
             
         }
-
         self.view.removeFromSuperview()
-
     }
+}
     
     
     @IBOutlet weak var titleLabel: UITextField!
@@ -38,14 +46,18 @@ class AddReminderViewController: UIViewController,UIActionSheetDelegate{
     
     @IBOutlet weak var timeLabel: UILabel!
     
+    var addReminderDelegate: AddReminderListDelegate?
+    var editReminderDelegate:EditReminderDelegate?
+    var managedObjectContext:NSManagedObjectContext?
+    
     
     var datePicker: UIDatePicker?
     
     
     var reminder:Reminder?
     var reminderDate:NSDate?
-    var addReminderDelegate: AddReminderListDelegate?
-    
+  
+    var editOrAddFlag:String?
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -67,7 +79,7 @@ class AddReminderViewController: UIViewController,UIActionSheetDelegate{
         let tap: UITapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(AddReminderViewController.dismissKeyboard))
         view.addGestureRecognizer(tap)
         
-        //oberser keyboard
+        //observe keyboard to change the view's frame
         NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(AddReminderViewController.keyboardWillShow(_:)), name: UIKeyboardWillShowNotification, object: nil)
         NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(AddReminderViewController.keyboardWillHide(_:)), name: UIKeyboardWillHideNotification, object: nil)
         
@@ -92,22 +104,60 @@ class AddReminderViewController: UIViewController,UIActionSheetDelegate{
     func getReminderFromInput() -> Reminder
     {
         let title = self.titleLabel.text
+        
         let note = self.noteTextView.text.trim()
        
+        //add new reminder 
+        //A new, autoreleased, fully configured instance of "Reminder" for the entity named "Reminder". The instance has its entity description set and is inserted it into context.
+ 
+        let newReminder: Reminder = (NSEntityDescription.insertNewObjectForEntityForName("Reminder",
+            inManagedObjectContext: self.managedObjectContext!) as? Reminder)!
+
         
         if(self.reminderDate != nil)
         {
-            self.reminder = Reminder(reminderTitle:title!,note:note,time:self.reminderDate!,completed:false)
+            newReminder.reminderTitle  = title
+            newReminder.note  = note
+            newReminder.reminderTime = self.reminderDate
+            newReminder.completed = 0
             
         }else{
-            self.reminder = Reminder(reminderTitle:title!,note:note,completed:false)
+            
+            newReminder.reminderTitle  = title
+            newReminder.note  = note
+            newReminder.completed = 0
+
         }
     
         
-    
-        return self.reminder!
+        return newReminder
     
     }
+    
+    //check input and return boolean
+    func checkInput() -> Bool
+    {
+        var validated: Bool = false
+        
+       if (self.titleLabel.text?.trim() == "")
+       {
+        
+        //alert
+        let alertController = UIAlertController(title: "iOScreator", message: "Please enter a title!", preferredStyle: UIAlertControllerStyle.Alert)
+        
+        alertController.addAction(UIAlertAction(title: "Dismiss", style: UIAlertActionStyle.Default,handler: nil))
+        
+        self.presentViewController(alertController, animated: true, completion: nil)
+        }
+       else{
+        
+            validated = true
+        }
+        
+        return  validated
+        
+    }
+    
     
     func showAnimate()
     {
@@ -152,11 +202,13 @@ class AddReminderViewController: UIViewController,UIActionSheetDelegate{
     {
         if(self.reminder != nil)
         {
-            if(self.reminder != "")
-            {
                 self.titleLabel.text = self.reminder?.reminderTitle
+            if(reminder?.reminderTime != nil){
+                self.timeLabel.text = dateformatterDateTime((self.reminder?.reminderTime)!) as String
             }
-            
+            if(reminder?.note != nil){
+                self.noteTextView.text  = self.reminder?.note
+            }
         }
         
     }

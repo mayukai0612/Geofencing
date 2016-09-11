@@ -8,20 +8,17 @@
 
 import UIKit
 import MapKit
+import CoreLocation
 
 
 
-//enum EventType: Int {
-//    case OnEntry = 0
-//    case OnExit
-//}
 
-class Geofencing: NSObject, MKAnnotation {
-    var coordinate: CLLocationCoordinate2D
-    var radius: CLLocationDistance
-    var identifier: String
-    var notifyTiming:String
-    //  var eventType: EventType
+class Geofencing: NSObject {
+    var coordinate: CLLocationCoordinate2D?
+    var radius: CLLocationDistance?
+    var identifier: String?
+    var notifyTiming:String?
+    var notification:String?
     
 
     init(coordinate: CLLocationCoordinate2D, radius: CLLocationDistance, identifier: String, notifyTiming: String) {
@@ -31,24 +28,10 @@ class Geofencing: NSObject, MKAnnotation {
         self.notifyTiming = notifyTiming
     }
     
-    // MARK: NSCoding
-//    
-//    required init?(coder decoder: NSCoder) {
-//        let latitude = decoder.decodeDoubleForKey(kGeotificationLatitudeKey)
-//        let longitude = decoder.decodeDoubleForKey(kGeotificationLongitudeKey)
-//        coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
-//        radius = decoder.decodeDoubleForKey(kGeotificationRadiusKey)
-//        identifier = decoder.decodeObjectForKey(kGeotificationIdentifierKey) as! String
-//        note = decoder.decodeObjectForKey(kGeotificationNoteKey) as! String
-//        eventType = EventType(rawValue: decoder.decodeIntegerForKey(kGeotificationEventTypeKey))!
-//    }
-//    
-//    func encodeWithCoder(coder: NSCoder) {
-//        coder.encodeDouble(coordinate.latitude, forKey: kGeotificationLatitudeKey)
-//        coder.encodeDouble(coordinate.longitude, forKey: kGeotificationLongitudeKey)
-//        coder.encodeDouble(radius, forKey: kGeotificationRadiusKey)
-//        coder.encodeObject(identifier, forKey: kGeotificationIdentifierKey)
-//        coder.encodeObject(note, forKey: kGeotificationNoteKey)
-//        coder.encodeInt(Int32(eventType.rawValue), forKey: kGeotificationEventTypeKey)
-//    }
+    init(coordinate: CLLocationCoordinate2D, radius: CLLocationDistance, notifyTiming: String) {
+        self.coordinate = coordinate
+        self.radius = radius
+        self.notifyTiming = notifyTiming
+    }
+ 
 }

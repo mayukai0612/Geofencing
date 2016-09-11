@@ -8,12 +8,20 @@
 
 import UIKit
 import MapKit
+import CoreData
 
 protocol AddCategoryDelegate {
     
     func addCategory(category:Category)
     
 }
+
+protocol EditCategoryDelegate
+{
+
+    func editCategory(category:Category)
+}
+
 class AddCategoryViewController: UIViewController,AddNotifyDelegate {
 
     
@@ -27,7 +35,10 @@ class AddCategoryViewController: UIViewController,AddNotifyDelegate {
    
 
     
-    var category:Category?
+    var category: Category?
+    var managedObjectContext: NSManagedObjectContext
+    var addCategoryDelegate: AddCategoryDelegate?
+    var editCategoryDelegate:EditCategoryDelegate?
     
     var catogeryTitle:String?
     var categoryColor:String?
@@ -37,8 +48,17 @@ class AddCategoryViewController: UIViewController,AddNotifyDelegate {
     var notifyRadius:CLLocationDistance?
     var notifyTiming:String?
     
-    var addCategoryDelegate: AddCategoryDelegate?
+    var editOrAddFlag:String?
     
+    required init?(coder aDecoder: NSCoder) {
+        let appDelegate = UIApplication.sharedApplication().delegate as! AppDelegate
+        self.managedObjectContext = appDelegate.managedObjectContext
+        if(self.category == nil){
+         self.category = NSEntityDescription.insertNewObjectForEntityForName("Category", inManagedObjectContext:
+            self.managedObjectContext) as? Category
+        }
+        super.init(coder: aDecoder)
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -52,11 +72,8 @@ class AddCategoryViewController: UIViewController,AddNotifyDelegate {
         
          self.navigationItem.setRightBarButtonItem(saveBtn, animated: false)
 
-        //set default color
-        chooseColorTab.selectedSegmentIndex = 3
-        
-        //set default notification status
-        notificationSwitch.setOn(false, animated: false)
+        //load views
+        loadViews()
         
         
         
@@ -95,16 +112,15 @@ class AddCategoryViewController: UIViewController,AddNotifyDelegate {
         }
     }
     
+    
+    
     func OnSaveClicked()
     {
         //check input
         if (checkInput() == true)
         {
             //initialize category
-            initializeCategory()
-            
-            //add category to category list
-            addCategoryDelegate?.addCategory(self.category!)
+            initializeCategoryAndAddToList()
             
             //navigate to previous page
             self.navigationController?.popViewControllerAnimated(true)
@@ -136,18 +152,79 @@ class AddCategoryViewController: UIViewController,AddNotifyDelegate {
         detailViewController.refreshUI()
     }
     
-    func initializeCategory()
+    func initializeCategoryAndAddToList()
     {
     
-        let categoryColor = self.categoryColor
+        var categoryColor = self.categoryColor
         let categoryLocation = self.locationTextField.text!.trim()
         let categoryTitle = self.titleTextField.text!.trim()
         let notificationStatus = notificationSwitch.on
+        //let category = Category()
         if(self.categoryColor == nil)
         {
-            self.categoryColor = "white"
+            categoryColor = "white"
         }
-        self.category = Category(categoryTitle:categoryTitle,categoryColor:categoryColor!,categoryLocation:categoryLocation,notificationStatus:notificationStatus,lat:self.lat!,lgt:self.lgt!,notifyRadius: self.notifyRadius,notifyTiming: self.notifyTiming)
+      
+        
+        
+        
+        if(editOrAddFlag ==  "add"){
+            //for add category
+            //1
+            self.category!.categoryTitle = categoryTitle
+            //2
+            self.category!.cateogryLoctation = categoryLocation
+            //3
+            self.category!.categoryColor = categoryColor
+            //4
+            if(notificationStatus == true)
+            {
+                self.category!.notificationStatus = 1
+            }else{
+                self.category!.notificationStatus = 0
+            }
+            //5
+            self.category!.lat = self.category!.lat
+            //6
+            self.category!.lgt = self.category!.lgt
+            //7
+            self.category!.notifyRadius = self.category!.notifyRadius!
+            //8
+            self.category!.notifyTiming = self.category!.notifyTiming
+            
+
+            self.addCategoryDelegate!.addCategory(self.category!)
+        }
+        else if (editOrAddFlag == "edit")
+        {
+            //For edit category
+            let newCategory: Category = (NSEntityDescription.insertNewObjectForEntityForName("Category",
+                inManagedObjectContext: self.managedObjectContext) as? Category)!
+            
+            //1
+            newCategory.categoryTitle = categoryTitle
+            //2
+            newCategory.cateogryLoctation = categoryLocation
+            //3
+            newCategory.categoryColor = categoryColor
+            //4
+            if(notificationStatus == true)
+            {
+                newCategory.notificationStatus = 1
+            }else{
+                newCategory.notificationStatus = 0
+            }
+            //5
+            newCategory.lat = self.category!.lat
+            //6
+            newCategory.lgt = self.category!.lgt
+            //7
+            newCategory.notifyRadius = self.category!.notifyRadius!
+            //8
+            newCategory.notifyTiming = self.category!.notifyTiming
+            self.editCategoryDelegate!.editCategory(newCategory)
+        }
+        
     }
     
     func searchLocation(textField: UITextField) {
@@ -155,8 +232,15 @@ class AddCategoryViewController: UIViewController,AddNotifyDelegate {
         
         let vc = self.storyboard!.instantiateViewControllerWithIdentifier("SearchLocation") as! SearchLocationViewController
         vc.addNotifyDelegate  = self
-        self.navigationController?.pushViewController(vc
-            , animated: true)
+        if(self.category?.cateogryLoctation != nil){
+//            if(self.category!.lat != nil || self.lat != nil)
+//            {
+                let coordinate = CLLocationCoordinate2D(latitude: Double((self.category!.lat!)),longitude:Double((self.category!.lgt!)))
+                vc.geofencing = Geofencing(coordinate: coordinate, radius: Double(self.category!.notifyRadius!), notifyTiming: self.category!.notifyTiming!)
+            //}
+        }
+        
+        self.navigationController?.pushViewController(vc, animated: true)
     
     }
     
@@ -167,7 +251,11 @@ class AddCategoryViewController: UIViewController,AddNotifyDelegate {
         
         self.lat = coordinate.latitude
         self.lgt = coordinate.longitude
+        self.category!.lat = coordinate.latitude
+        self.category!.lgt = coordinate.longitude
+
         self.locationTextField.text = locationName
+     
         print(self.location!)
         print(self.lat!)
         print(self.lgt!)
@@ -179,7 +267,8 @@ class AddCategoryViewController: UIViewController,AddNotifyDelegate {
     {
         self.notifyTiming = timing
         self.notifyRadius = radius
-        
+        self.category!.notifyTiming = timing
+        self.category!.notifyRadius = NSNumber(double: radius)
     }
     
     
@@ -207,6 +296,42 @@ class AddCategoryViewController: UIViewController,AddNotifyDelegate {
         view.endEditing(true)
     }
     
+    func loadViews()
+    {
+        //load view for editing category
+        if (self.category != nil && editOrAddFlag == "edit")
+        {
+            self.titleTextField.text = self.category!.categoryTitle
+            self.locationTextField.text = self.category!.cateogryLoctation
+            if(self.category!.notificationStatus == 1){
+                self.notificationSwitch.setOn(true, animated: false)
+            }
+            else{
+            self.notificationSwitch.setOn(false, animated: false)
+            }
+            switch self.category!.categoryColor! {
+            case "red":
+                self.chooseColorTab.selectedSegmentIndex = 0
+            case "green":
+                self.chooseColorTab.selectedSegmentIndex = 1
+            case "yellow":
+                self.chooseColorTab.selectedSegmentIndex = 2
+            default:
+                chooseColorTab.selectedSegmentIndex = 3
+            }
+        
+        }
+        else
+        {
+            //set default color
+            chooseColorTab.selectedSegmentIndex = 3
+            
+            //set default notification status
+            notificationSwitch.setOn(false, animated: false)
+        
+        }
+    
+    }
     
 }
 

@@ -58,8 +58,14 @@ class CategoryDetailViewController: UIViewController {
     func refreshUI() {
         titleLabel?.text = category!.categoryTitle
         titleColorLabel?.text = category!.categoryColor
-        locationLabel?.text = category!.categoryLocation
-        notificationSwitch.setOn((category?.notificationStatus)!, animated: false)
+        locationLabel?.text = category!.cateogryLoctation
+        if (category?.notificationStatus == 1)
+        {
+            notificationSwitch.setOn(true, animated: false)
+        
+        }else{
+            notificationSwitch.setOn(false, animated: false)
+        }
         
     }
     

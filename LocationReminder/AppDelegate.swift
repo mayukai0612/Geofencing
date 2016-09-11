@@ -8,31 +8,49 @@
 
 import UIKit
 import CoreData
+import MapKit
 
 @UIApplicationMain
-class AppDelegate: UIResponder, UIApplicationDelegate {
+class AppDelegate: UIResponder, UIApplicationDelegate,CLLocationManagerDelegate {
 
     var window: UIWindow?
+     let locationManager = CLLocationManager()
 
 
     func application(application: UIApplication, didFinishLaunchingWithOptions launchOptions: [NSObject: AnyObject]?) -> Bool {
+        
+        locationManager.delegate = self
+        locationManager.requestAlwaysAuthorization()
+        
         // Override point for customization after application launch.
         let splitViewController = self.window!.rootViewController as! UISplitViewController
         //A split view controller has an array property viewControllers that has the master and detail view controllers inside.
         let leftNavController = splitViewController.viewControllers.first as! UINavigationController
         let masterViewController = leftNavController.topViewController as! CategoryListViewController
        
+        //
+        masterViewController.managedObjectContext = self.managedObjectContext
+        
         let detailNavigationController = splitViewController.viewControllers.last as! UINavigationController
 
         let detailViewController = detailNavigationController.topViewController as! ReminderDetailViewController
         
         
+        //if category list is not nil, assign the reminderlist of first category to the reminder list view
         if let firstCategory = masterViewController.categoryList.first{
-        detailViewController.reminderList = (firstCategory.reminderList)
+            let reminderList = NSArray(array: (firstCategory.reminders?.allObjects as! [Reminder])) as! [Reminder]
+
+        detailViewController.reminderList = reminderList
         }
         
         
-     //   masterViewController.delegate = detailViewController
+        application.registerUserNotificationSettings(
+            UIUserNotificationSettings(
+                forTypes: [.Alert, .Badge, .Sound],
+                categories: nil))
+
+        UIApplication.sharedApplication().cancelAllLocalNotifications()
+
         return true
     }
 
@@ -122,6 +140,56 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             }
         }
     }
+    
+    func handleRegionEvent(region: CLRegion!) {
+        // Show an alert if application is active
+        if UIApplication.sharedApplication().applicationState == .Active {
+            if let message = notefromRegionIdentifier(region.identifier) {
+                if let viewController = window?.rootViewController {
+                    showAlert(nil, message: message, viewController: viewController)
+                }
+            }
+        } else {
+            // Otherwise present a local notification
+            var notification = UILocalNotification()
+            notification.alertBody = notefromRegionIdentifier(region.identifier)
+            notification.soundName = "Default";
+            UIApplication.sharedApplication().presentLocalNotificationNow(notification)
+        }
+    }
+    
+    func locationManager(manager: CLLocationManager!, didEnterRegion region: CLRegion!) {
+        if region is CLCircularRegion {
+            handleRegionEvent(region)
+        }
+    }
+    
+    func locationManager(manager: CLLocationManager!, didExitRegion region: CLRegion!) {
+        if region is CLCircularRegion {
+            handleRegionEvent(region)
+        }
+    }
+    
+    func notefromRegionIdentifier(identifier: String) -> String? {
+        if let items = NSUserDefaults.standardUserDefaults().arrayForKey("Geofencing") {
+            for item in items {
+                if let geofencing = NSKeyedUnarchiver.unarchiveObjectWithData(item as! NSData) as? Geofencing {
+                    if geofencing.identifier == identifier {
+                        return geofencing.notification!
+                    }
+                }
+            }
+        }
+        return nil
+    }
+    
+    func showAlert(title: String!,message: String,viewController: UIViewController) {
+        let alert = UIAlertController(title: title, message: message, preferredStyle: .Alert)
+        let action = UIAlertAction(title: "OK", style: .Cancel, handler: nil)
+        alert.addAction(action)
+        viewController.presentViewController(alert, animated: true, completion: nil)
+    }
+    
 
 }
 

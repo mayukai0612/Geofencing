@@ -14,7 +14,7 @@ class CategoryMapViewController: UIViewController,CLLocationManagerDelegate,MKMa
     @IBOutlet weak var mapView: MKMapView!
     
     var categoryList = [Category]()
-    
+    var enabledGeofencing = [Geofencing]()
     let locationManager = CLLocationManager()
     var currentLocation:CLLocationCoordinate2D?
     var annotationAdded:Bool = false
@@ -38,7 +38,25 @@ class CategoryMapViewController: UIViewController,CLLocationManagerDelegate,MKMa
     }
         self.mapView!.showsUserLocation = true
 
+        //
+      
+      
+        self.navigationItem.rightBarButtonItem = UIBarButtonItem(title: "Start", style: .Plain, target: self, action: #selector(startMonitoring))
+
+    }
+    
+    func startMonitoring()
+    {
+        getAllEnabledGeofencing(self.categoryList)
+        if(self.enabledGeofencing.count != 0){
+            for geofencing in self.enabledGeofencing{
+            startMonitoringGeotification(geofencing)
+        }
+        }
+        else{
         
+        showAlert("No enalbed Geofencing", message: "Pleas add before starting", viewController: self)
+        }
     }
     
     func locationManager(manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
@@ -71,6 +89,43 @@ class CategoryMapViewController: UIViewController,CLLocationManagerDelegate,MKMa
     }
     
     
+    
+    func getAllEnabledGeofencing(categoryList:[Category])
+    {
+        // get userdefaults
+        let def = NSUserDefaults.standardUserDefaults()
+        let key = "Geofencing"
+        var geofencings = [Geofencing]()
+
+        for category in categoryList
+        {
+            
+            //if(category.notificationStatus == 1)
+            if(true)
+            {
+                //coordinate
+                let coordinate = CLLocationCoordinate2D(latitude:Double(category.lat!) ,longitude:Double(category.lgt!))
+                //identifier
+                let identifier = NSUUID().UUIDString
+                //geofencing
+                let geofencing  = Geofencing(coordinate: coordinate, radius: Double(category.notifyRadius!), identifier:identifier, notifyTiming: category.notifyTiming!)
+                //geofencing notification
+                geofencing.notification = "\(category.notifyTiming!) \(category.cateogryLoctation!)"
+                geofencings.append(geofencing)
+                self.enabledGeofencing.append(geofencing)
+            }
+        
+        }
+        
+        //save to userdefaults
+        
+        def.setObject(geofencings, forKey: key)
+        def.synchronize()
+    
+    
+    }
+    
+    
     func addAnnotations(categoryList:[Category])
     {
         var annotationView:MKPinAnnotationView!
@@ -89,7 +144,12 @@ class CategoryMapViewController: UIViewController,CLLocationManagerDelegate,MKMa
             
             //intialize coordinate
             
-            let coordinate = CLLocationCoordinate2D(latitude: category.lat!,longitude:category.lgt!)
+            let lat  = Double(category.lat!)
+            let lgt  = Double(category.lgt!)
+            print ("lat\(lat)")
+            print ("lgt\(lgt)")
+            
+            let coordinate = CLLocationCoordinate2D(latitude: lat,longitude:lgt)
             
             pointAnnoation.coordinate = coordinate
             
@@ -106,7 +166,11 @@ class CategoryMapViewController: UIViewController,CLLocationManagerDelegate,MKMa
             //Add annotations to map
             self.mapView!.addAnnotation(annotationView.annotation!)
             
-            addRadiusCircleForGeofencing(coordinate,radius: category.notifyRadius!)
+            //convert radiust from NSnumber to CLLocationDistance
+            let mdf = MKDistanceFormatter()
+            mdf.units = .Metric
+            let clDistance = CLLocationDistance(category.notifyRadius!)
+            addRadiusCircleForGeofencing(coordinate,radius: clDistance)
         }
         
 
@@ -147,11 +211,13 @@ class CategoryMapViewController: UIViewController,CLLocationManagerDelegate,MKMa
     func mapView(mapView: MKMapView, annotationView view: MKAnnotationView, calloutAccessoryControlTapped control: UIControl) {
         
         let annotation = view.annotation as!CustomPointAnnotation
-        let reminderList = annotation.category?.reminderList
+        
+        // convert NSSet to [Reminder]
+         let reminderList =  NSArray(array: (annotation.category!.reminders?.allObjects as! [Reminder])) as! [Reminder]
         
         
         let reminderListView = self.storyboard!.instantiateViewControllerWithIdentifier("reminderList") as! ReminderDetailViewController
-            reminderListView.reminderList = reminderList!
+            reminderListView.reminderList = reminderList
         self.navigationController!.pushViewController(reminderListView, animated: true)
         
     }
@@ -161,8 +227,8 @@ class CategoryMapViewController: UIViewController,CLLocationManagerDelegate,MKMa
         if overlay is MKCircle {
             let circleRenderer = MKCircleRenderer(overlay: overlay)
             circleRenderer.lineWidth = 1.0
-            circleRenderer.strokeColor = UIColor.brownColor()
-            circleRenderer.fillColor = UIColor.brownColor().colorWithAlphaComponent(0.4)
+            circleRenderer.strokeColor = UIColor.greenColor()
+            circleRenderer.fillColor = UIColor.greenColor().colorWithAlphaComponent(0.4)
             return circleRenderer
         }
         return nil
@@ -171,6 +237,7 @@ class CategoryMapViewController: UIViewController,CLLocationManagerDelegate,MKMa
     
     func addRadiusCircleForGeofencing(coordinate:CLLocationCoordinate2D,radius:CLLocationDistance ) {
         self.mapView.addOverlay(MKCircle(centerCoordinate: coordinate, radius:radius))
+        print("radius\(radius)")
     }
     
     func calculateDistanceInKM(firstLocation:CLLocationCoordinate2D,secondLocation:CLLocationCoordinate2D) -> Double{
@@ -183,6 +250,74 @@ class CategoryMapViewController: UIViewController,CLLocationManagerDelegate,MKMa
         let y = Double(round(10*x)/10)
         return y
         
+    }
+    
+    
+    
+    //create CLCircularRegion
+    func regionWithGeotification(geofencing: Geofencing) -> CLCircularRegion {
+       
+        let region = CLCircularRegion(center: geofencing.coordinate!, radius: geofencing.radius!, identifier: geofencing.identifier!)
+        
+        if(geofencing.notifyTiming == "On Entry")
+        {
+            region.notifyOnEntry = true
+            region.notifyOnExit = false
+        }else
+        {
+            region.notifyOnEntry = false
+            region.notifyOnExit = true
+        }
+        
+        
+        return region
+    }
+    
+    
+
+    func startMonitoringGeotification(geofencing: Geofencing) {
+        //  if the device has the required hardware to support the monitoring of geofences.
+        if !CLLocationManager.isMonitoringAvailableForClass(CLCircularRegion) {
+            showAlert("Error", message: "Geofencing is not supported on this device!", viewController: self)
+            return
+        }
+        
+        // 2
+        if CLLocationManager.authorizationStatus() != .AuthorizedAlways {
+            showAlert("Warning", message: "Your geotification is saved but will only be activated once you grant Geotify permission to access the device location.", viewController: self)
+        }
+        // 3
+        let region = regionWithGeotification(geofencing)
+        // 4
+        locationManager.startMonitoringForRegion(region)
+    }
+    
+    
+    func stopMonitoringGeotification(geofencing: Geofencing) {
+        for region in locationManager.monitoredRegions {
+            if let circularRegion = region as? CLCircularRegion {
+                if circularRegion.identifier == geofencing.identifier {
+                    locationManager.stopMonitoringForRegion(circularRegion)
+                }
+            }
+        }
+    }
+
+
+    func showAlert(title: String!,message: String,viewController: UIViewController) {
+        let alert = UIAlertController(title: title, message: message, preferredStyle: .Alert)
+        let action = UIAlertAction(title: "OK", style: .Cancel, handler: nil)
+        alert.addAction(action)
+        viewController.presentViewController(alert, animated: true, completion: nil)
+    }
+    
+    
+    func locationManager(manager: CLLocationManager!, monitoringDidFailForRegion region: CLRegion!, withError error: NSError!) {
+        print("Monitoring failed for region with identifier: \(region.identifier)")
+    }
+    
+    func locationManager(manager: CLLocationManager!, didFailWithError error: NSError!) {
+        print("Location Manager failed with the following error: \(error)")
     }
 
 }
@@ -211,16 +346,8 @@ class CategoryMapViewController: UIViewController,CLLocationManagerDelegate,MKMa
 ////        title = "Geotifications (\(geotifications.count))"
 ////    }
 //    
-//    //  func regionWithGeotification(geotification: Geotification) -> CLCircularRegion {
-//    //    // 1
-//    //    let region = CLCircularRegion(center: geotification.coordinate, radius: geotification.radius, identifier: geotification.identifier)
-//    //    // 2
-//    //    region.notifyOnEntry = (geotification.eventType == .OnEntry)
-//    //    region.notifyOnExit = !region.notifyOnEntry
-//    //    return region
-//    //  }
-//    
-//    
+
+//
 //    // MARK: AddGeotificationViewControllerDelegate
 //    
 //    func addGeotificationViewController(controller: AddGeotificationViewController, didAddCoordinate coordinate: CLLocationCoordinate2D, radius: Double, identifier: String, note: String, eventType: EventType) {
